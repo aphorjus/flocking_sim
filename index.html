@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="p5.min.js"></script>
+	<script src="quadTree.js"></script>
+	<script src="Unit.js"></script>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+	<meta charset="utf-8">
+</head>
+
+<body>
+	<script>
+
+		const w = 1200
+		const h = 800
+		const NEIGHBOUR_RADIUS = 20
+		const SEPARATION_RADIUS = 5
+		let units = []
+		let showQtree = false
+		let quadTreeCap = 70
+
+		let selectedUnits = []
+		let selecting = false
+		let selectionBox = null
+		let selectStartPoint = null
+
+
+		function setup() {
+			createCanvas(w, h)
+			units = [new Unit(createVector(100, 100))]
+
+			for(let i = 0; i < 800; i++){
+				v = createVector(random(w), random(h))
+				units.push( new Unit(createVector(v.x, v.y)) )
+			}
+			// selectedUnits = units
+			document.dispatchEvent(new Event('p5ready'))
+		}
+
+		function draw() {
+			background(0);
+			quadTree = new QuadTree(new Region(w/2, h/2, w/2, h/2), quadTreeCap)
+			units.forEach((unit) => {
+				unit.show()
+				quadTree.insert(unit.pos.x, unit.pos.y, unit)
+			})
+
+			fill(0,255,0)
+			stroke(0,255,0)
+			selectedUnits.forEach((unit) => {	
+				ellipse(unit.pos.x, unit.pos.y, 4, 4)
+			})
+
+			if(showQtree){
+				quadTree.show()
+			}
+
+			let fps = frameRate();
+			fill(255);
+			stroke(0);
+			text(`FPS: ${fps.toFixed(2)} --- cap: ${quadTreeCap}`, 10, height - 10);
+
+			if( selecting ){
+				noFill()
+				stroke(0,255,0)
+				rectMode(CORNERS)
+				rect(selectStartPoint.x, selectStartPoint.y, mouseX, mouseY)
+
+				selectionBox = getSelectionRegion(selectStartPoint.x, selectStartPoint.y)
+				selectedUnits = quadTree.getPoints(selectionBox).map((d) => {return d.data})
+			}
+
+			units.forEach((unit) => {
+				r = new Region( unit.pos.x, unit.pos.y, NEIGHBOUR_RADIUS, NEIGHBOUR_RADIUS )
+				dataPoints = quadTree.getPoints(r)
+				neighbours = dataPoints.map((dataPoint) => {return dataPoint.data})
+				unit.update(neighbours)
+			})
+
+			keyDownHandler()
+		}
+
+		function getSelectionRegion(spX, spY){
+			let x = 0
+			let y = 0
+			let width = 0
+			let height = 0
+
+			if(spX > mouseX){
+				width = (spX - mouseX)/2
+				x = spX - (width)
+			} else {
+				width = (mouseX - spX)/2
+				x = spX + (width)
+			}
+			if(spY > mouseY){
+				height = (spY - mouseY)/2
+				y = spY - (height)
+			} else {
+				height = (mouseY - spY)/2
+				y = spY + (height)
+			}
+			// console.log(x, y, width, height)
+			return new Region(x, y, width, height)
+		}
+
+		function keyDownHandler(){
+
+			if(keyIsDown(UP_ARROW)){
+				quadTreeCap++
+			}
+			if(keyIsDown(DOWN_ARROW)){
+				quadTreeCap--
+			}
+
+			// if()
+
+		}
+
+		function mousePressed() {
+			if(mouseButton == RIGHT){
+				selectedUnits.forEach(unit => unit.setDest(createVector(mouseX, mouseY)))
+			}
+			if(mouseButton == LEFT){
+				selectStartPoint = createVector(mouseX, mouseY)
+				selecting = true
+			}
+		}
+
+		function mouseReleased() {
+			if(mouseButton == LEFT){
+				selecting = false
+			}
+		}
+
+		function keyPressed() {
+			if(keyCode == 83){
+				showQtree = !showQtree
+			}
+		}
+
+
+		document.addEventListener("p5ready", function(){
+			let scetch = document.getElementById('defaultCanvas0')
+			scetch.addEventListener('contextmenu', function(evt){
+				evt.preventDefault();
+			})
+		})
+
+  </script>
+</body>
+</html>
