@@ -12,7 +12,7 @@ class Unit {
 		fill(250)
 		stroke(0)
 		if(this.dest){
-			fill(this.dest.x%255, this.dest.y%255, (this.dest.x+this.dest.y)%255)
+			fill(this.dest.x%255, this.dest.y%255, 255)
 			// stroke(255)
 		}
 		ellipse(this.pos.x, this.pos.y, this.size, this.size)

@@ -20,6 +20,8 @@
 		let quadTreeCap = 70
 
 		let selectedUnits = []
+		// let newSelectedUnits = []
+		let currentSelectedUnits = []
 		let selecting = false
 		let selectionBox = null
 		let selectStartPoint = null
@@ -29,7 +31,7 @@
 			createCanvas(w, h)
 			units = [new Unit(createVector(100, 100))]
 
-			for(let i = 0; i < 800; i++){
+			for(let i = 0; i < 600; i++){
 				v = createVector(random(w), random(h))
 				units.push( new Unit(createVector(v.x, v.y)) )
 			}
@@ -60,16 +62,6 @@
 			stroke(0);
 			text(`FPS: ${fps.toFixed(2)} --- cap: ${quadTreeCap}`, 10, height - 10);
 
-			if( selecting ){
-				noFill()
-				stroke(0,255,0)
-				rectMode(CORNERS)
-				rect(selectStartPoint.x, selectStartPoint.y, mouseX, mouseY)
-
-				selectionBox = getSelectionRegion(selectStartPoint.x, selectStartPoint.y)
-				selectedUnits = quadTree.getPoints(selectionBox).map((d) => {return d.data})
-			}
-
 			units.forEach((unit) => {
 				r = new Region( unit.pos.x, unit.pos.y, NEIGHBOUR_RADIUS, NEIGHBOUR_RADIUS )
 				dataPoints = quadTree.getPoints(r)
@@ -77,6 +69,7 @@
 				unit.update(neighbours)
 			})
 
+			selectionHandler()
 			keyDownHandler()
 		}
 
@@ -104,6 +97,30 @@
 			return new Region(x, y, width, height)
 		}
 
+		function selectionHandler(){
+			if( !selecting ){ return }
+
+			noFill()
+			stroke(0,255,0)
+			rectMode(CORNERS)
+			rect(selectStartPoint.x, selectStartPoint.y, mouseX, mouseY)
+
+			selectionBox = getSelectionRegion(selectStartPoint.x, selectStartPoint.y)
+			selectionBoxUnits = quadTree.getPoints(selectionBox).map((d) => {return d.data})
+
+			if(keyIsDown(SHIFT)){
+				newSelectedUnits = []
+				selectionBoxUnits.forEach((unit) => {
+					if( !currentSelectedUnits.includes(unit) ){
+						newSelectedUnits.push(unit)
+					}
+				})
+				selectedUnits = newSelectedUnits.concat(currentSelectedUnits)
+			} else {
+				currentSelectedUnits = selectedUnits = selectionBoxUnits
+			}
+		}
+
 		function keyDownHandler(){
 
 			if(keyIsDown(UP_ARROW)){
@@ -112,9 +129,6 @@
 			if(keyIsDown(DOWN_ARROW)){
 				quadTreeCap--
 			}
-
-			// if()
-
 		}
 
 		function mousePressed() {
@@ -128,15 +142,18 @@
 		}
 
 		function mouseReleased() {
+			console.log('hello')
 			if(mouseButton == LEFT){
+				currentSelectedUnits = selectedUnits
 				selecting = false
 			}
 		}
 
 		function keyPressed() {
-			if(keyCode == 83){
+			if(keyCode == 83){ // 83 = s
 				showQtree = !showQtree
 			}
+			// if(keyCode == )
 		}
 
 
