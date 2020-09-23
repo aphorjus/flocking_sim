@@ -1,42 +1,87 @@
 class Unit {
-	constructor(pos){
+	constructor(pos, maxForce, maxSpeed, size){
 		this.pos = pos
-		this.size = 4
+		this.size = size || 12
 		this.vel = p5.Vector.random2D()
 		this.acc = createVector()
 		this.dest = null
-		this.maxSpeed = 10
+		this.maxSpeed = maxSpeed || 5.0
+		this.maxForce = maxForce || 1.0
+		this.moving = false
+
+		this.separationMult = 10.0
+		this.alignmentMult = 1.0
+		this.cohesionMult = .001
 	}
 	show(){
-		// triangle(pos.x, y1, x2, y2, x3, y3)
 		fill(250)
 		stroke(0)
 		if(this.dest){
 			fill(this.dest.x%255, this.dest.y%255, 255)
-			// stroke(255)
 		}
-		ellipse(this.pos.x, this.pos.y, this.size, this.size)
-		// noFill()
-		// stroke(255)
-		// ellipse(this.pos.x, this.pos.y, NEIGHBOUR_RADIUS*2, NEIGHBOUR_RADIUS*2)
-		// stroke(255,0,0)
-		// ellipse(this.pos.x, this.pos.y, SEPARATION_RADIUS*2, SEPARATION_RADIUS*2)
-
+		this.draw_triangle()
+		noFill()
 	}
+
+	draw_triangle(){
+		const size = this.size
+		const theta = this.vel.heading() + radians(90);
+
+		const frontX = 0
+		const frontY = -size
+
+		const backLeftX = -(size/2)
+		const backLeftY = (size/2)
+
+		const backRightX = (size/2)
+		const backRightY = (size/2)
+
+		push()
+		translate(this.pos.x, this.pos.y)
+		rotate(theta)
+		triangle( 
+			frontX, frontY, 
+			backRightX, backRightY, 
+			backLeftX, backLeftY
+		)
+		pop()
+	}
+
 	update(neighbours){
-		let destVec = this.getDestVec()
-		this.setVel(this.flock(neighbours))
-		this.vel.add(destVec)
+
+		// if(!this.moving){
+		// 	return
+		// }
+
+		let acc = this.getDestVec()
+		// this.setVel(destVec)
+		// this.setVel(this.flock(neighbours))
+		// this.vel.add(destVec)
+		acc.add(this.flock(neighbours))
+		acc.limit(this.maxForce)
+
+		this.vel.add(acc)
 		this.vel.limit(this.maxSpeed)
+
+		// if(vel.ma)
 
 		this.pos.add(this.vel)
 
+		this.wrapAround()
+
+		// let distToDest = dist(this.dest.x, this.dest.y, this.pos.x, this.pos.y)
+		// if(distToDest < 5){
+		// 	this.moving = false
+		// 	this.setVel(createVector(0,0))
+		// }
+	}
+
+	wrapAround(){
 		if(this.pos.x > w){
 			this.pos.x = 0
 		} else if (this.pos.x < 0){
 			this.pos.x = w
 		}
-
 		if(this.pos.y > h){
 			this.pos.y = 0
 		} else if (this.pos.y < 0){
@@ -46,12 +91,13 @@ class Unit {
 
 	getDestVec(){ 
 		if(this.dest){
-			return this.dest.copy().sub(this.pos).limit(1)
+			return this.dest.copy().sub(this.pos).setMag(1)//.mult(0.01)
 		}
 		return createVector()
 	}
 
 	setDest(dest){
+		this.moving = true
 		this.dest = dest
 	}
 
@@ -59,35 +105,50 @@ class Unit {
 		this.vel = vel
 	}
 
-	move(dest){
-		this.pos = dest
-	}
+	// moveTo(dest){
+	// 	this.moving = true
+	// 	setDest(dest)
+	// }
 
 	flock(neighbours){
-		let separation = this.separate(neighbours).mult(5)//.limit(10)
-		let alignment = this.align(neighbours).mult(1)
-		let cohesion = this.cohere(neighbours).mult(.001)
+		let separation = this.separate(neighbours)
+												 .mult(this.separationMult)
+		let alignment = this.align(neighbours)
+												.mult(this.alignmentMult)
+		let cohesion = this.cohere(neighbours)
+											 .mult(this.cohesionMult)
 		return separation.add(alignment).add(cohesion)
 	}
 
 
-	flockHelper(neighbours, funk, distance){
+	flockHelper(neighbours, distance, funk){
+		let maxFlockForce = 1
 		let force = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
 			let d = dist(n.pos.x, n.pos.y, this.pos.x, this.pos.y)
-			if( n != this && d < distance ){
-				force = funk(this, n)
+			if( n != this && d < distance && d != 0){
+				funk(this, force, n, d)
 				count++
 			}
 		})
 		if( count > 0 ){
 			force.div(count)
 		}
-		return separation
+		return force//.limit(maxFlockForce)
 	}
 
 	separate(neighbours){
+
+		// let newSeparation = this.flockHelper(
+		// 	neighbours, 
+		// 	SEPARATION_RADIUS, 
+		// 	function(t, force, n, d){
+		// 		force.add( t.pos.copy().sub(n.pos) ).div(d)
+		// 	}
+		// )
+		// return separation
+
 		let separation = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
@@ -100,14 +161,29 @@ class Unit {
 		if(count > 0){
 			separation.div(count)	
 		}
+
+		// console.log("separation:", newSeparation.equals(separation))
+		// console.log("old:", separation, "new:", newSeparation)
+
 		return separation
 	}
 
 	align(neighbours){
+
+		// let newAlignment = this.flockHelper(
+		// 	neighbours,
+		// 	NEIGHBOUR_RADIUS,
+		// 	function(t, force, n, d){
+		// 		force.add(n.vel)
+		// 	}
+		// )
+		// return alignment
+
 		let alignment = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
-			if(dist(n.pos.x, n.pos.y, this.pos.x, this.pos.y) < NEIGHBOUR_RADIUS){
+			let d = dist(n.pos.x, n.pos.y, this.pos.x, this.pos.y)
+			if(d < NEIGHBOUR_RADIUS){
 				alignment.add(n.vel)
 				count++
 			}
@@ -115,14 +191,28 @@ class Unit {
 		if (count > 0){
 			alignment.div(count)
 		}
+		// console.log("alignment:", alignment.equals(newAlignment))
+		// console.log("new:", newAlignment, "old:", alignment)
+
 		return alignment
 	}
 
 	cohere(neighbours){
+
+		// let cohesion = this.flockHelper(
+		// 	neighbours,
+		// 	NEIGHBOUR_RADIUS,
+		// 	function(force, n, d){
+		// 		force.add(n.pos)
+		// 	}
+		// )
+		// console.log("with helper   :", cohesion)
+
 		let cohesion = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
-			if(dist(n.pos.x, n.pos.y, this.pos.x, this.pos.y) < NEIGHBOUR_RADIUS){
+			const d = dist(n.pos.x, n.pos.y, this.pos.x, this.pos.y)
+			if(d < NEIGHBOUR_RADIUS){
 				cohesion.add(n.pos)
 				count++
 			}
@@ -130,7 +220,11 @@ class Unit {
 		if(count > 0){
 			cohesion.div(count)
 		}
+		let v = createVector(cohesion.x-this.pos.x, cohesion.y-this.pos.y)
+		// cohesion = cohesion.sub(this.pos)
 
-		return cohesion.sub(this.pos)
+		// console.log("without helper:", cohesion)
+		// return cohesion.sub(this.pos)
+		return v
 	}
 }
