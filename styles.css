@@ -24,3 +24,13 @@ canvas {
 	width: 80px;
 	margin: 20px;
 }
+
+.nav-bar-text{
+	resize: none;
+	/*height: 40%;*/
+	margin: 20px;	
+}
+
+.slidecontainer{
+	margin: 20px;
+}

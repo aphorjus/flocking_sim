@@ -1,17 +1,15 @@
 class Unit {
-	constructor(pos, maxForce, maxSpeed, size){
+	constructor(pos, size, maxForce, maxSpeed){
 		this.pos = pos
 		this.size = size || 12
 		this.vel = p5.Vector.random2D()
 		this.acc = createVector()
 		this.dest = null
-		this.maxSpeed = maxSpeed || 5.0
+		this.maxSpeed = maxSpeed || 4.0
 		this.maxForce = maxForce || 1.0
 		this.moving = false
 
-		this.separationMult = 10.0
-		this.alignmentMult = 1.0
-		this.cohesionMult = .001
+		this.destForce = 0.5
 	}
 	show(){
 		fill(250)
@@ -60,13 +58,12 @@ class Unit {
 		acc.add(this.flock(neighbours))
 		acc.limit(this.maxForce)
 
+
 		this.vel.add(acc)
+		// this.vel = acc
 		this.vel.limit(this.maxSpeed)
 
-		// if(vel.ma)
-
 		this.pos.add(this.vel)
-
 		this.wrapAround()
 
 		// let distToDest = dist(this.dest.x, this.dest.y, this.pos.x, this.pos.y)
@@ -91,7 +88,7 @@ class Unit {
 
 	getDestVec(){ 
 		if(this.dest){
-			return this.dest.copy().sub(this.pos).setMag(1)//.mult(0.01)
+			return this.dest.copy().sub(this.pos).limit(this.destForce)//.mult(0.01)
 		}
 		return createVector()
 	}
@@ -105,18 +102,14 @@ class Unit {
 		this.vel = vel
 	}
 
-	// moveTo(dest){
-	// 	this.moving = true
-	// 	setDest(dest)
-	// }
-
 	flock(neighbours){
-		let separation = this.separate(neighbours)
-												 .mult(this.separationMult)
-		let alignment = this.align(neighbours)
-												.mult(this.alignmentMult)
-		let cohesion = this.cohere(neighbours)
-											 .mult(this.cohesionMult)
+		let separation 	= this.separate(neighbours)
+													.mult( SEPARATION_MULT )
+		let alignment 	= this.align(neighbours)
+													.mult( ALIGNMENT_MULT )
+		let cohesion 		= this.cohere(neighbours)
+											 		.mult( COHESION_MULT )
+
 		return separation.add(alignment).add(cohesion)
 	}
 

@@ -1,12 +1,15 @@
 const NEIGHBOUR_RADIUS = 84
-const SEPARATION_RADIUS = 24
+const SEPARATION_RADIUS = 36
+
+let SEPARATION_MULT		= 10.0
+let ALIGNMENT_MULT		= 1.0
+let COHESION_MULT			= 0.001
 
 let w = window.innerWidth - 200;// 1200
 let h = window.innerHeight - 200;// 800
 
-let num_units = 300
+let num_units = 200
 let units = []
-let markets = []
 
 let showQtree = false
 let quadTreeCap = 70
@@ -20,54 +23,59 @@ let selectStartPoint = null
 
 function setup() {
 	createCanvas(w, h)
-	// markets = [
-	// 	new Market(
-	// 		createVector(600, 400), 
-	// 		{'water': 5},
-	// 		{'gas': 10}
-	// 	)
-	// ]
-	// for(let i = 0; i < num_units; i++){
-	// 	units.push( new Unit(createVector(w/2, h/2)) )
-	// }
+	
 	reset()
 	document.dispatchEvent(new Event('p5ready'))
 }
 
 function reset() {
-	units = []
-	for(let i = 0; i < num_units; i++){
-		units.push( new Unit(createVector(random(w), random(h))) )
+	units = createUnitArr(num_units)
+	// for(let i = 0; i < num_units; i++){
+	// 	units.push( 
+	// 		new Unit(createVector(random(w), random(h))) 
+	// 	)
+	// }
+}
+
+function createUnitArr(size){
+	unitArr = []
+	for(let i = 0; i < size; i++){
+		unitArr.push( 
+			new Unit(createVector(random(w), random(h))) 
+		)
 	}
+	return unitArr
 }
 
 function draw() {
+
 	background(0);
 
-	updateUnits()
 	showUnits()
-
-	// drawMarkest()
-	updateMarkets()
-
-	noFill()
-	// fill(0,255,0)
-	stroke(0,255,0)
-	selectedUnits.forEach((unit) => {	
-		ellipse(unit.pos.x, unit.pos.y, SEPARATION_RADIUS, SEPARATION_RADIUS)
-	})
-
+	showSelectedUnitIdicator()
 	if(showQtree){
 		quadTree.show()
 	}
+	showFPS()	
 
+	updateUnits()
+	selectionHandler()
+	keyDownHandler()
+}
+
+function showFPS(){
 	let fps = frameRate();
 	fill(255);
 	stroke(0);
 	text(`FPS: ${fps.toFixed(2)} --- cap: ${quadTreeCap}`, 10, height - 10);
+}
 
-	selectionHandler()
-	keyDownHandler()
+function showSelectedUnitIdicator(){
+	noFill()
+	stroke(0,255,0)
+	selectedUnits.forEach((unit) => {	
+		ellipse(unit.pos.x, unit.pos.y, SEPARATION_RADIUS, SEPARATION_RADIUS)
+	})
 }
 
 function showUnits(){
@@ -86,16 +94,6 @@ function updateUnits(){
 		dataPoints = quadTree.getPoints(r)
 		neighbours = dataPoints.map((dataPoint) => {return dataPoint.data})
 		unit.update(neighbours)
-	})
-	// units.forEach((unit) => {
-	// 	unit.update(units)
-	// })
-}
-
-function updateMarkets(){
-	markets.forEach((market) => {
-		market.show()
-		market.update()
 	})
 }
 
@@ -182,6 +180,36 @@ function keyPressed() {
 }
 
 
+function removeDests(){
+
+}
+
+function setNumUnits(num){
+	const numNewUnits = num - num_units
+	num_units = num
+
+	if(numNewUnits < 0){
+		units = units.slice(0, num_units)
+		return
+	}
+
+	let newUnits = createUnitArr(numNewUnits)
+	units = units.concat(newUnits)
+}
+
+function setSeparationMult(val){
+	SEPARATION_MULT = val
+}
+
+function setAlignmentMult(val){
+	ALIGNMENT_MULT = val
+}
+
+function setCohesionMult(val){
+	COHESION_MULT = val
+}
+
+
 document.addEventListener("p5ready", function(){
 	let scetch = document.getElementById('defaultCanvas0')
 	scetch.addEventListener('contextmenu', function(evt){
@@ -189,8 +217,7 @@ document.addEventListener("p5ready", function(){
 	})
 })
 
-document.addEventListener("resize", function(){
-	console.log("resizing")
+window.addEventListener("resize", function(){
 	w = window.innerWidth - 200
 	h = window.innerHeight - 200
 	resizeCanvas(w, h)
