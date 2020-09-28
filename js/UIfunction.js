@@ -10,8 +10,3 @@ sepMultSlider.oninput = function(){
 	console.log(this.value)
 	setSeparationMult(this.value)
 }
-
-// const sepMultSlider = document.getElementById("sep-mult-range")
-// sepMultSlider.oninput = function(){
-// 	setSeparationMult(this.value)
-// }
