@@ -47,14 +47,7 @@ class Unit {
 
 	update(neighbours){
 
-		// if(!this.moving){
-		// 	return
-		// }
-
 		let acc = this.getDestVec()
-		// this.setVel(destVec)
-		// this.setVel(this.flock(neighbours))
-		// this.vel.add(destVec)
 		acc.add(this.flock(neighbours))
 		acc.limit(this.maxForce)
 
@@ -65,12 +58,6 @@ class Unit {
 
 		this.pos.add(this.vel)
 		this.wrapAround()
-
-		// let distToDest = dist(this.dest.x, this.dest.y, this.pos.x, this.pos.y)
-		// if(distToDest < 5){
-		// 	this.moving = false
-		// 	this.setVel(createVector(0,0))
-		// }
 	}
 
 	wrapAround(){
@@ -133,15 +120,6 @@ class Unit {
 
 	separate(neighbours){
 
-		// let newSeparation = this.flockHelper(
-		// 	neighbours, 
-		// 	SEPARATION_RADIUS, 
-		// 	function(t, force, n, d){
-		// 		force.add( t.pos.copy().sub(n.pos) ).div(d)
-		// 	}
-		// )
-		// return separation
-
 		let separation = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
@@ -163,15 +141,6 @@ class Unit {
 
 	align(neighbours){
 
-		// let newAlignment = this.flockHelper(
-		// 	neighbours,
-		// 	NEIGHBOUR_RADIUS,
-		// 	function(t, force, n, d){
-		// 		force.add(n.vel)
-		// 	}
-		// )
-		// return alignment
-
 		let alignment = createVector()
 		let count = 0
 		neighbours.forEach((n) => {
@@ -184,22 +153,11 @@ class Unit {
 		if (count > 0){
 			alignment.div(count)
 		}
-		// console.log("alignment:", alignment.equals(newAlignment))
-		// console.log("new:", newAlignment, "old:", alignment)
 
 		return alignment
 	}
 
 	cohere(neighbours){
-
-		// let cohesion = this.flockHelper(
-		// 	neighbours,
-		// 	NEIGHBOUR_RADIUS,
-		// 	function(force, n, d){
-		// 		force.add(n.pos)
-		// 	}
-		// )
-		// console.log("with helper   :", cohesion)
 
 		let cohesion = createVector()
 		let count = 0
@@ -214,10 +172,6 @@ class Unit {
 			cohesion.div(count)
 		}
 		let v = createVector(cohesion.x-this.pos.x, cohesion.y-this.pos.y)
-		// cohesion = cohesion.sub(this.pos)
-
-		// console.log("without helper:", cohesion)
-		// return cohesion.sub(this.pos)
-		return v
+		return cohesion.sub(this.pos)
 	}
 }

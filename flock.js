@@ -30,11 +30,6 @@ function setup() {
 
 function reset() {
 	units = createUnitArr(num_units)
-	// for(let i = 0; i < num_units; i++){
-	// 	units.push( 
-	// 		new Unit(createVector(random(w), random(h))) 
-	// 	)
-	// }
 }
 
 function createUnitArr(size){
